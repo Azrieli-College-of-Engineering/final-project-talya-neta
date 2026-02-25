@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # השירות הציבורי - חשוף לאינטרנט, מוגן ב-10 שכבות הגנה
+  public-app:
+    build: .
+    command: python public_app.py
+    ports:
+      - "5000:5000"
+    networks:
+      - ssrf-network
+
+  # השירות הפנימי החסוי - לא נגיש מבחוץ
+  internal-app:
+    build: .
+    command: python internal_app.py
+    # אין כאן הגדרת ports - השירות לא נגיש מבחוץ!
+    networks:
+      ssrf-network:
+        # Network aliases - שמות DNS נוספים לשירות ברשת הפנימית.
+        # המפתח הוסיף aliases לנוחות פנימית, אבל לא חסם אותם ב-blacklist!
+        aliases:
+          - secret-db
+          - backup-service
+
+# הגדרת הרשת הווירטואלית הפנימית
+# Docker מקצה כתובות מטווח 172.16.0.0/12 שהמפתח שכח לחסום!
+networks:
+  ssrf-network:
+    driver: bridge

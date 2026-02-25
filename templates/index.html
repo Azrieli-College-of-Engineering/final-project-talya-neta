@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת למשיכת תמונות - Public API (Hardened)</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Web Image Fetcher</h1>
+        </header>
+        
+        <main>
+            <div class="examples-section">
+                <p><strong>נסה את התרחישים הבאים:</strong></p>
+
+                <div class="scenario-group">
+                    <h4>בקשות לגיטימיות:</h4>
+                    <div class="example-buttons">
+                        <button class="example-btn safe-btn"
+                            data-url="https://placehold.co/300x200.png"
+                            data-desc="תרחיש לגיטימי: משיכת תמונה מדומיין ציבורי תקין. הנתיב מסתיים ב-.png, ה-IP ציבורי, אין הפניות - עובר את כל 10 ההגנות כראוי.">
+                            1. בקשה לגיטימית
+                        </button>
+                    </div>
+                </div>
+
+                <div class="scenario-group">
+                    <h4>מתקפות שנחסמות (ההגנות עובדות):</h4>
+                    <div class="example-buttons">
+                        <button class="example-btn blocked-btn"
+                            data-url="http://internal-app:8080/admin/secrets#.png"
+                            data-desc="נחסם על ידי הגנה 3 (Hostname Blacklist): השם 'internal-app' נמצא ברשימה השחורה המורחבת. המתקפה הישנה עם #.png כבר לא עובדת.">
+                            2. מתקפה ישנה (hostname)
+                        </button>
+                        <button class="example-btn blocked-btn"
+                            data-url="http://127.0.0.1:8080/admin/secrets/logo.png"
+                            data-desc="נחסם על ידי הגנה 4+5 (IP Check + DNS Resolution): הכתובת 127.0.0.1 מזוהה כ-IP פרטי גם בבדיקת ה-regex וגם ברזולוציית ה-DNS. חסימה כפולה.">
+                            3. IP ישיר (127.0.0.1)
+                        </button>
+                        <button class="example-btn blocked-btn"
+                            data-url="http://secret-db:8080/admin/secrets"
+                            data-desc="נחסם על ידי הגנה 7 (Path Extension): שם ה-DNS 'secret-db' עובר את ה-blacklist ואת בדיקת ה-IP (172.x.x.x לא חסום), אבל הנתיב '/admin/secrets' לא מסתיים בסיומת תמונה.">
+                            4. DNS חלופי (בלי סיומת)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="scenario-group">
+                    <h4>המתקפה המתוחכמת - עקיפת כל 10 ההגנות:</h4>
+                    <div class="example-buttons">
+                        <button class="example-btn exploit-btn"
+                            data-url="http://secret-db:8080/admin/secrets/logo.png"
+                            data-html-desc="
+                                <div class='desc-title'>POC - עקיפת כל 10 ההגנות</div>
+                                <div class='desc-grid'>
+                                    <div class='desc-item'><span class='badge'>1</span> Rate Limit- לא חורג</div>
+                                    <div class='desc-item'><span class='badge'>6</span> Port -8080 מותר</div>
+                                    <div class='desc-item'><span class='badge'>2</span> Scheme- http תקין</div>
+                                    <div class='desc-item'><span class='badge'>7</span> Path- מסתיים ב-.png</div>
+                                    <div class='desc-item'><span class='badge'>3</span> Blacklist- secret- db לא ברשימה</div>
+                                    <div class='desc-item'><span class='badge'>8</span> Redirect- אין הפניות</div>
+                                    <div class='desc-item'><span class='badge'>4</span> IP Regex- לא מזוהה כ-IP</div>
+                                    <div class='desc-item'><span class='badge'>9</span> Size- קטן מהמגבלה</div>
+                                    <div class='desc-item'><span class='badge'>5</span> DNS- 172.x לא חסום</div>
+                                    <div class='desc-item'><span class='badge'>10</span> Content-Type- רק Log, לא חסום</div>
+                                </div>
+                            ">
+                            5. הפריצה המלאה (POC)
+                        </button>
+                    </div>
+                </div>
+
+                <p id="explanationText" class="explanation-text">בחר אחת מהדוגמאות למעלה או הזן כתובת ידנית.</p>
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="urlInput" placeholder="https://example.com/image.png" />
+                <button id="fetchBtn" class="primary-btn">משוך תוכן</button>
+            </div>
+            
+            <div class="result-box">
+                <h3>תוצאה:</h3>
+                <pre id="resultOutput"></pre>
+            </div>
+        </main>
+    </div>
+    
+    <script src="/static/app.js"></script>
+</body>
+</html>
